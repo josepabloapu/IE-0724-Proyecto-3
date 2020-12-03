@@ -1,93 +1,68 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <FrameLayout
-        android:id="@+id/frameLayoutCamera"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_marginBottom="200dp"
-        android:background="@color/teal_200"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+    <TextureView
+        android:id="@+id/textureView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@+id/linearLayout"
+        />
 
-        <TextView
-            android:id="@+id/sensor_list"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="50dp"
-            android:text="Camera goes here"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-    </FrameLayout>
-
-    <FrameLayout
-        android:id="@+id/frameLayoutData"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/frameLayoutCamera">
+    <LinearLayout
+        android:id="@+id/linearLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:orientation="vertical">
 
         <TextView
             android:id="@+id/sensor_data_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="50dp"
+            android:layout_marginStart="10dp"
             android:text="Sensor Data:"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
-
         <TextView
             android:id="@+id/accelerometer_sensor_data"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="70dp"
-            android:layout_marginStart="50dp"
+            android:layout_marginStart="10dp"
             android:text="@+string/accelerometer_sensor_data"
             app:layout_constraintStart_toStartOf="@+id/sensor_data_title"
             app:layout_constraintTop_toBottomOf="@+id/sensor_data_title" />
-
         <TextView
             android:id="@+id/magnetometer_sensor_data"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="90dp"
-            android:layout_marginStart="50dp"
+            android:layout_marginStart="10dp"
             android:text="@+string/magnetometer_sensor_data"
             app:layout_constraintStart_toStartOf="@+id/accelerometer_sensor_data"
             app:layout_constraintTop_toBottomOf="@+id/accelerometer_sensor_data" />
-
         <TextView
-            android:id="@+id/angle_data_azimut_pitch_roll"
+            android:id="@+id/angle_data_azimuth_pitch_roll"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="110dp"
-            android:layout_marginStart="50dp"
-            android:text="@+string/angle_data_azimut_pitch_roll"
+            android:layout_marginStart="10dp"
+            android:text="@+string/angle_data_azimuth_pitch_roll"
             app:layout_constraintStart_toStartOf="@+id/magnetometer_sensor_data"
             app:layout_constraintTop_toBottomOf="@+id/magnetometer_sensor_data" />
-
         <TextView
             android:id="@+id/distance_data"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="130dp"
-            android:layout_marginStart="50dp"
+            android:layout_marginStart="10dp"
+            android:layout_marginBottom="10dp"
             android:text="@+string/distance_data"
-            app:layout_constraintStart_toStartOf="@+id/angle_data_azimut_pitch_roll"
-            app:layout_constraintTop_toBottomOf="@+id/angle_data_azimut_pitch_roll" />
-    </FrameLayout>
-</androidx.constraintlayout.widget.ConstraintLayout>
+            app:layout_constraintStart_toStartOf="@+id/angle_data_azimuth_pitch_roll"
+            app:layout_constraintTop_toBottomOf="@+id/angle_data_azimuth_pitch_roll" />
+    </LinearLayout>
+
+</RelativeLayout>

@@ -1,117 +1,226 @@
 package com.example.myapplication;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.hardware.Camera;
+import android.graphics.ImageFormat;
+import android.graphics.SurfaceTexture;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.media.MediaRecorder;
+import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraCaptureSession;
+import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraDevice;
+import android.hardware.camera2.CameraManager;
+import android.hardware.camera2.CameraMetadata;
+import android.hardware.camera2.CaptureRequest;
+import android.hardware.camera2.TotalCaptureResult;
+import android.hardware.camera2.params.StreamConfigurationMap;
+import android.media.Image;
+import android.media.ImageReader;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
-import android.widget.FrameLayout;
+import android.os.Environment;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.util.Size;
+import android.util.SparseIntArray;
+import android.view.Surface;
+import android.view.TextureView;
+import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
 
-    private static final String TAG = "MainActivity";
-
-    private Camera mCamera;
-    private CameraPreview mPreview;
-    private SurfaceView preview;
-    private MediaRecorder mediaRecorder;
-
-    private SensorManager sensorManager;
-    private Sensor accelerometerSensor;
-    private Sensor magnetometerSensor;
-
+    // layout variables
+    private TextureView textureView;
     private TextView accelerometerSensorDataTextView;
     private TextView magnetometerSensorDataTextView;
     private TextView angleDataTextView;
     private TextView distanceDataTextView;
 
+    //Check state orientation of output image
+    private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
+    static{
+        ORIENTATIONS.append(Surface.ROTATION_0,90);
+        ORIENTATIONS.append(Surface.ROTATION_90,0);
+        ORIENTATIONS.append(Surface.ROTATION_180,270);
+        ORIENTATIONS.append(Surface.ROTATION_270,180);
+    }
+
+    // camera variables
+    private String cameraId;
+    private CameraDevice cameraDevice;
+    private CameraCaptureSession cameraCaptureSessions;
+    private CaptureRequest.Builder captureRequestBuilder;
+    private Size imageDimension;
+    private static final int REQUEST_CAMERA_PERMISSION = 200;
+
+    // background thread
+    private Handler mBackgroundHandler;
+    private HandlerThread mBackgroundThread;
+
+    // sensor variables
+    private SensorManager sensorManager;
+    private Sensor accelerometerSensor;
+    private Sensor magnetometerSensor;
+
+    // distance variables
     private float[] gravity;
     private float[] geoMagnetic;
-
-    private float azimut;
+    private float azimuth;
     private float pitch;
     private float roll;
-
     private float height = 1.4f;
     private float distance;
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+    /***************************************************************************
+     *  Camera helper functions
+     ***************************************************************************/
 
-        // Create an instance of Camera
-        mCamera = getCameraInstance();
-
-        // Create our Preview view and set it as the content of our activity.
-        mPreview = new CameraPreview(this, mCamera);
-        FrameLayout preview = (FrameLayout) findViewById(R.id.frameLayoutCamera);
-        preview.addView(mPreview);
-
-        String sensor_error = getResources().getString(R.string.error_no_sensor);
-
-        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-
-        // Accelerometer
-        accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        accelerometerSensorDataTextView = (TextView) findViewById(R.id.accelerometer_sensor_data);
-        if (accelerometerSensor == null) {
-            accelerometerSensorDataTextView.setText(sensor_error);
+    CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
+        @Override
+        public void onOpened(@NonNull CameraDevice camera) {
+            cameraDevice = camera;
+            createCameraPreview();
         }
 
-        // Magnetometer
-        magnetometerSensor = sensorManager.getDefaultSensor((Sensor.TYPE_MAGNETIC_FIELD));
-        magnetometerSensorDataTextView = (TextView) findViewById(R.id.magnetometer_sensor_data);
-        if (magnetometerSensor == null) {
-            magnetometerSensorDataTextView.setText(sensor_error);
+        @Override
+        public void onDisconnected(@NonNull CameraDevice cameraDevice) {
+            cameraDevice.close();
         }
 
-        // Angles
-        angleDataTextView = (TextView) findViewById(R.id.angle_data_azimut_pitch_roll);
-        distanceDataTextView = (TextView) findViewById(R.id.distance_data);
-
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-
-        if (accelerometerSensor != null) {
-            sensorManager.registerListener(this, accelerometerSensor,
-                SensorManager.SENSOR_DELAY_NORMAL);
+        @Override
+        public void onError(@NonNull CameraDevice cameraDevice, int i) {
+            cameraDevice.close();
+            cameraDevice=null;
         }
+    };
 
-        if (magnetometerSensor != null) {
-            sensorManager.registerListener(this, magnetometerSensor,
-                SensorManager.SENSOR_DELAY_NORMAL);
+    private void createCameraPreview() {
+        try{
+            SurfaceTexture texture = textureView.getSurfaceTexture();
+            assert  texture != null;
+            texture.setDefaultBufferSize(imageDimension.getWidth(),imageDimension.getHeight());
+            Surface surface = new Surface(texture);
+            captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+            captureRequestBuilder.addTarget(surface);
+            cameraDevice.createCaptureSession(Arrays.asList(surface), new CameraCaptureSession.StateCallback() {
+                @Override
+                public void onConfigured(@NonNull CameraCaptureSession cameraCaptureSession) {
+                    if(cameraDevice == null)
+                        return;
+                    cameraCaptureSessions = cameraCaptureSession;
+                    updatePreview();
+                }
+
+                @Override
+                public void onConfigureFailed(@NonNull CameraCaptureSession cameraCaptureSession) {
+                    Toast.makeText(MainActivity.this, "Changed", Toast.LENGTH_SHORT).show();
+                }
+            },null);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
         }
     }
 
-    @Override
-    protected void onStop() {
-        super.onStop();
-        sensorManager.unregisterListener(this);
+    private void updatePreview() {
+        if(cameraDevice == null)
+            Toast.makeText(this, "Error", Toast.LENGTH_SHORT).show();
+        captureRequestBuilder.set(CaptureRequest.CONTROL_MODE,CaptureRequest.CONTROL_MODE_AUTO);
+        try{
+            cameraCaptureSessions.setRepeatingRequest(captureRequestBuilder.build(),null,mBackgroundHandler);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
     }
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-        releaseMediaRecorder();       // if you are using MediaRecorder, release it first
-        releaseCamera();              // release the camera immediately on pause event
+    private void openCamera() {
+        CameraManager manager = (CameraManager)getSystemService(Context.CAMERA_SERVICE);
+        try{
+            cameraId = manager.getCameraIdList()[0];
+            CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
+            StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+            assert map != null;
+            imageDimension = map.getOutputSizes(SurfaceTexture.class)[0];
+            //Check realtime permission if run higher API 23
+            if(ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED)
+            {
+                ActivityCompat.requestPermissions(this,new String[]{
+                    Manifest.permission.CAMERA,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE
+                },REQUEST_CAMERA_PERMISSION);
+                return;
+            }
+            manager.openCamera(cameraId,stateCallback,null);
+
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
     }
+
+
+
+    TextureView.SurfaceTextureListener textureListener = new TextureView.SurfaceTextureListener() {
+        @Override
+        public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int i, int i1) {
+            openCamera();
+        }
+
+        @Override
+        public void onSurfaceTextureSizeChanged(SurfaceTexture surfaceTexture, int i, int i1) {
+
+        }
+
+        @Override
+        public boolean onSurfaceTextureDestroyed(SurfaceTexture surfaceTexture) {
+            return false;
+        }
+
+        @Override
+        public void onSurfaceTextureUpdated(SurfaceTexture surfaceTexture) {
+
+        }
+    };
+
+    private void stopBackgroundThread() {
+        mBackgroundThread.quitSafely();
+        try{
+            mBackgroundThread.join();
+            mBackgroundThread= null;
+            mBackgroundHandler = null;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void startBackgroundThread() {
+        mBackgroundThread = new HandlerThread("Camera Background");
+        mBackgroundThread.start();
+        mBackgroundHandler = new Handler(mBackgroundThread.getLooper());
+    }
+
+    /***************************************************************************
+     *  Sensor related listeners
+     ***************************************************************************/
 
     @Override
     public void onSensorChanged(SensorEvent event) {
@@ -146,128 +255,112 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 float orientation[] = new float[3];
                 SensorManager.getOrientation(Rmat, orientation);
 
-                azimut = 57.29578F * orientation[0];
+                // 57.29578 is 1 radian degree
+                azimuth = 57.29578F * orientation[0];
                 pitch = 57.29578F * orientation[1];
                 roll = 57.29578F * orientation[2];
 
-                angleDataTextView.setText(getResources().getString(R.string.angle_data_azimut_pitch_roll, azimut, pitch, roll));
+                angleDataTextView.setText(getResources().getString(R.string.angle_data_azimuth_pitch_roll, azimuth, pitch, roll));
 
                 // compute distance
                 distance = Math.abs((float) (height * Math.tan(pitch * Math.PI / 180)));
-
-                if (geoMagnetic[1] > 0) {
-                    distanceDataTextView.setText(getResources().getString(R.string.distance_data, distance));
-                } else {
-                    distanceDataTextView.setText(getResources().getString(R.string.distance_data, Float.POSITIVE_INFINITY));
-                }
-
+                distanceDataTextView.setText(getResources().getString(R.string.distance_data, distance));
             }
         }
-
     }
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
+        // do nothing, but function is required because class implements SensorEventListener
+    }
+
+    /***************************************************************************
+     *  General listeners
+     ***************************************************************************/
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        // camera
+        textureView = (TextureView)findViewById(R.id.textureView);
+        //From Java 1.4 , you can use keyword 'assert' to check expression true or false
+        assert textureView != null;
+        textureView.setSurfaceTextureListener(textureListener);
+
+        // distance
+
+        String sensor_error = getResources().getString(R.string.error_no_sensor);
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+
+        // Accelerometer
+        accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        accelerometerSensorDataTextView = (TextView) findViewById(R.id.accelerometer_sensor_data);
+        if (accelerometerSensor == null) {
+            accelerometerSensorDataTextView.setText(sensor_error);
+        }
+
+        // Magnetometer
+        magnetometerSensor = sensorManager.getDefaultSensor((Sensor.TYPE_MAGNETIC_FIELD));
+        magnetometerSensorDataTextView = (TextView) findViewById(R.id.magnetometer_sensor_data);
+        if (magnetometerSensor == null) {
+            magnetometerSensorDataTextView.setText(sensor_error);
+        }
+
+        // Angles
+        angleDataTextView = (TextView) findViewById(R.id.angle_data_azimuth_pitch_roll);
+        distanceDataTextView = (TextView) findViewById(R.id.distance_data);
 
     }
 
-    /** Check if this device has a camera */
-    private boolean checkCameraHardware(Context context) {
-        if (context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA)){
-            // this device has a camera
-            return true;
-        } else {
-            // no camera on this device
-            return false;
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        if (accelerometerSensor != null) {
+            sensorManager.registerListener(this, accelerometerSensor,
+                SensorManager.SENSOR_DELAY_NORMAL);
+        }
+
+        if (magnetometerSensor != null) {
+            sensorManager.registerListener(this, magnetometerSensor,
+                SensorManager.SENSOR_DELAY_NORMAL);
         }
     }
 
-    /** A safe way to get an instance of the Camera object. */
-    public static Camera getCameraInstance(){
-        Camera c = null;
-        try {
-            c = Camera.open(); // attempt to get a Camera instance
-        }
-        catch (Exception e){
-            // Camera is not available (in use or does not exist)
-        }
-        return c; // returns null if camera is unavailable
+    @Override
+    protected void onStop() {
+        super.onStop();
+        sensorManager.unregisterListener(this);
     }
 
-    /** A basic Camera preview class */
-    public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
-        private SurfaceHolder mHolder;
-        private Camera mCamera;
+    @Override
+    protected void onResume() {
+        super.onResume();
+        startBackgroundThread();
+        if(textureView.isAvailable())
+            openCamera();
+        else
+            textureView.setSurfaceTextureListener(textureListener);
+    }
 
-        public CameraPreview(Context context, Camera camera) {
-            super(context);
-            mCamera = camera;
+    @Override
+    protected void onPause() {
+        super.onPause();
+        stopBackgroundThread();
+    }
 
-            // Install a SurfaceHolder.Callback so we get notified when the
-            // underlying surface is created and destroyed.
-            mHolder = getHolder();
-            mHolder.addCallback(this);
-            // deprecated setting, but required on Android versions prior to 3.0
-            mHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-        }
-
-        public void surfaceCreated(SurfaceHolder holder) {
-            // The Surface has been created, now tell the camera where to draw the preview.
-            try {
-                mCamera.setPreviewDisplay(holder);
-                mCamera.startPreview();
-            } catch (IOException e) {
-                Log.d(TAG, "Error setting camera preview: " + e.getMessage());
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        if(requestCode == REQUEST_CAMERA_PERMISSION)
+        {
+            if(grantResults[0] != PackageManager.PERMISSION_GRANTED)
+            {
+                Toast.makeText(this, "You can't use camera without permission", Toast.LENGTH_SHORT).show();
+                finish();
             }
         }
-
-        public void surfaceDestroyed(SurfaceHolder holder) {
-            // empty. Take care of releasing the Camera preview in your activity.
-        }
-
-        public void surfaceChanged(SurfaceHolder holder, int format, int w, int h) {
-            // If your preview can change or rotate, take care of those events here.
-            // Make sure to stop the preview before resizing or reformatting it.
-
-            if (mHolder.getSurface() == null){
-                // preview surface does not exist
-                return;
-            }
-
-            // stop preview before making changes
-            try {
-                mCamera.stopPreview();
-            } catch (Exception e){
-                // ignore: tried to stop a non-existent preview
-            }
-
-            // set preview size and make any resize, rotate or
-            // reformatting changes here
-
-            // start preview with new settings
-            try {
-                mCamera.setPreviewDisplay(mHolder);
-                mCamera.startPreview();
-
-            } catch (Exception e){
-                Log.d(TAG, "Error starting camera preview: " + e.getMessage());
-            }
-        }
     }
 
-    private void releaseMediaRecorder(){
-        if (mediaRecorder != null) {
-            mediaRecorder.reset();   // clear recorder configuration
-            mediaRecorder.release(); // release the recorder object
-            mediaRecorder = null;
-            mCamera.lock();           // lock camera for later use
-        }
-    }
-
-    private void releaseCamera(){
-        if (mCamera != null){
-            mCamera.release();        // release the camera for other applications
-            mCamera = null;
-        }
-    }
 }
