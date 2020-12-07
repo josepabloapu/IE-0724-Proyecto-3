@@ -48,7 +48,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
-public class MainActivity extends AppCompatActivity implements SensorEventListener {
+public class MainActivity extends AppCompatActivity implements SensorEventListener, View.OnClickListener{
 
     // layout variables
     private TextureView textureView;
@@ -91,6 +91,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private float roll;
     private float height = 1.4f;
     private float distance;
+    private boolean is_meters = true;
+    private String measure_unit = "m";
 
     /***************************************************************************
      *  Camera helper functions
@@ -263,8 +265,18 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 angleDataTextView.setText(getResources().getString(R.string.angle_data_azimuth_pitch_roll, azimuth, pitch, roll));
 
                 // compute distance
-                distance = Math.abs((float) (height * Math.tan(pitch * Math.PI / 180)));
-                distanceDataTextView.setText(getResources().getString(R.string.distance_data, distance));
+                if(is_meters) {
+                    distance = Math.abs((float) (height * Math.tan(pitch * Math.PI / 180)));
+                    measure_unit = "m";
+                    distanceDataTextView.setText(getResources().getString(R.string.distance_data, distance, measure_unit));
+                }
+                else {
+                    distance = Math.abs((float) (3.28 * height * Math.tan(pitch * Math.PI / 180)));
+                    measure_unit = "Ft";
+                    distanceDataTextView.setText(getResources().getString(R.string.distance_data, distance, measure_unit));
+                }
+
+//                distanceDataTextView.setText(getResources().getString(R.string.distance_data, distance));
             }
         }
     }
@@ -312,6 +324,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         angleDataTextView = (TextView) findViewById(R.id.angle_data_azimuth_pitch_roll);
         distanceDataTextView = (TextView) findViewById(R.id.distance_data);
 
+        // Unit conversion button
+        final Button convert_distance_button = findViewById(R.id.convert_distance_button);
+        convert_distance_button.setOnClickListener(this);
     }
 
     @Override
@@ -363,4 +378,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         }
     }
 
+    @Override
+    public void onClick(View view) {
+        is_meters = !is_meters;
+    }
 }
