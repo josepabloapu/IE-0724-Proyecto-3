@@ -5,4 +5,7 @@
     <string name="magnetometer_sensor_data">"Magnetometer: %1$.2f ; %2$.2f ; %3$.2f [uT]"</string>
     <string name="angle_data_azimuth_pitch_roll">"Azimuth ; Pitch ; Roll: %1$.2f ; %2$.2f ; %3$.2f [°]"</string>
     <string name="distance_data">Distance: %1$.2f [%2$s]</string>
+    <string name="cellphone_height">1.40</string>
+    <string name="set_height_button">Set height</string>
+    <string name="current_height">Height: %1$.2f [ft]</string>
 </resources>
