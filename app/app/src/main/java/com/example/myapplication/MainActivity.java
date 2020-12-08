@@ -34,6 +34,7 @@ import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -48,6 +49,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
+import static java.lang.Float.parseFloat;
+
 public class MainActivity extends AppCompatActivity implements SensorEventListener, View.OnClickListener{
 
     // layout variables
@@ -56,6 +59,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private TextView magnetometerSensorDataTextView;
     private TextView angleDataTextView;
     private TextView distanceDataTextView;
+    private TextView currentHeightTextView;
 
     //Check state orientation of output image
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
@@ -276,7 +280,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     distanceDataTextView.setText(getResources().getString(R.string.distance_data, distance, measure_unit));
                 }
 
-//                distanceDataTextView.setText(getResources().getString(R.string.distance_data, distance));
+                // display current height
+                currentHeightTextView.setText(getResources().getString(R.string.current_height, height));
             }
         }
     }
@@ -320,13 +325,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             magnetometerSensorDataTextView.setText(sensor_error);
         }
 
-        // Angles
+        // Angles and distances
         angleDataTextView = (TextView) findViewById(R.id.angle_data_azimuth_pitch_roll);
         distanceDataTextView = (TextView) findViewById(R.id.distance_data);
+        currentHeightTextView = (TextView) findViewById(R.id.height_data);
 
-        // Unit conversion button
+        // Unit conversion and height set button
         final Button convert_distance_button = findViewById(R.id.convert_distance_button);
+        final Button set_height_button = findViewById(R.id.set_height_button);
         convert_distance_button.setOnClickListener(this);
+        set_height_button.setOnClickListener(this);
     }
 
     @Override
@@ -380,6 +388,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     @Override
     public void onClick(View view) {
-        is_meters = !is_meters;
+        switch (view.getId()) {
+            case R.id.convert_distance_button:
+                is_meters = !is_meters;
+                break;
+            case R.id.set_height_button:
+                EditText editHeight = (EditText) findViewById(R.id.editHeight);
+                height = parseFloat(editHeight.getText().toString());
+                currentHeightTextView.setText(getResources().getString(R.string.current_height, height));
+            default:
+                break;
+        }
     }
 }
