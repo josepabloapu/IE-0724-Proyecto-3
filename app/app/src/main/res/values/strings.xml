@@ -7,5 +7,5 @@
     <string name="distance_data">Distance: %1$.2f [%2$s]</string>
     <string name="cellphone_height">1.40</string>
     <string name="set_height_button">Set height</string>
-    <string name="current_height">Height: %1$.2f [ft]</string>
+    <string name="current_height">Height: %1$.2f [%2$s]</string>
 </resources>

@@ -273,15 +273,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     distance = Math.abs((float) (height * Math.tan(pitch * Math.PI / 180)));
                     measure_unit = "m";
                     distanceDataTextView.setText(getResources().getString(R.string.distance_data, distance, measure_unit));
+                    currentHeightTextView.setText(getResources().getString(R.string.current_height, height, measure_unit));
                 }
                 else {
                     distance = Math.abs((float) (3.28 * height * Math.tan(pitch * Math.PI / 180)));
                     measure_unit = "Ft";
                     distanceDataTextView.setText(getResources().getString(R.string.distance_data, distance, measure_unit));
+                    currentHeightTextView.setText(getResources().getString(R.string.current_height, 3.28 * height, measure_unit));
                 }
 
                 // display current height
-                currentHeightTextView.setText(getResources().getString(R.string.current_height, height));
+//                currentHeightTextView.setText(getResources().getString(R.string.current_height, height, measure_unit));
             }
         }
     }
@@ -395,7 +397,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             case R.id.set_height_button:
                 EditText editHeight = (EditText) findViewById(R.id.editHeight);
                 height = parseFloat(editHeight.getText().toString());
-                currentHeightTextView.setText(getResources().getString(R.string.current_height, height));
+                currentHeightTextView.setText(getResources().getString(R.string.current_height, height, measure_unit));
             default:
                 break;
         }
