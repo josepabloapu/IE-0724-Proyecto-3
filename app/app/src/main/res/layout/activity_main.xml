@@ -42,8 +42,6 @@
             android:inputType="number|numberDecimal"
             android:text="@string/cellphone_height" />
 
-
-
         <Button
             style="@style/Widget.AppCompat.Button.Colored"
             android:id="@+id/set_height_button"
