@@ -2,6 +2,6 @@
 Measure how far is the object. Distance estimator
 
 ## Members
-- Willy Villalobos
-- Bernardo Zúñiga
-- Jose Pablo Apú
+- B17170 Willy Villalobos Marrero
+- B27445 Bernardo Zúñiga Alvarado
+- B10407 Jose Pablo Apú Picado
