@@ -17,7 +17,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true"
+        android:layout_marginTop="225dp"
         android:background="@drawable/back"
         android:text="     "/>
 
@@ -42,7 +42,7 @@
             android:inputType="number|numberDecimal"
             android:text="@string/cellphone_height" />
 
-        
+
 
         <Button
             style="@style/Widget.AppCompat.Button.Colored"
