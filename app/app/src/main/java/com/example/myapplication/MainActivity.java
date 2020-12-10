@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.ImageFormat;
@@ -33,6 +34,8 @@ import android.util.SparseIntArray;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -51,7 +54,7 @@ import java.util.UUID;
 
 import static java.lang.Float.parseFloat;
 
-public class MainActivity extends AppCompatActivity implements SensorEventListener, View.OnClickListener{
+public class MainActivity extends Activity implements SensorEventListener, View.OnClickListener{
 
     // layout variables
     private TextureView textureView;
@@ -300,7 +303,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+
+        //Remove title bar
+        this.requestWindowFeature(Window.FEATURE_NO_TITLE);
+
+        //Remove notification bar
+        this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+
+        //set content view AFTER ABOVE sequence (to avoid crash)
+        this.setContentView(R.layout.activity_main); // setContentView(R.layout.activity_main);
 
         // camera
         textureView = (TextureView)findViewById(R.id.textureView);
@@ -396,7 +407,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 break;
             case R.id.set_height_button:
                 EditText editHeight = (EditText) findViewById(R.id.editHeight);
-                height = parseFloat(editHeight.getText().toString());
+                if (is_meters) {
+                    height = parseFloat(editHeight.getText().toString());
+                } else {
+                    height = parseFloat(editHeight.getText().toString()) / 3.28084f;
+                }
+
                 currentHeightTextView.setText(getResources().getString(R.string.current_height, height, measure_unit));
             default:
                 break;
