@@ -10,12 +10,61 @@
         android:id="@+id/textureView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_above="@+id/linearLayout" />
+        android:layout_above="@+id/linearLayout2"/>
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="225dp"
+        android:background="@drawable/back"
+        android:text="     "/>
+
+    <LinearLayout
+        android:id="@+id/linearLayout2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/linearLayout"
+        android:layout_alignParentStart="true"
+        android:layout_marginTop="2dp"
+        android:layout_marginBottom="2dp"
+        android:layout_marginLeft="2dp"
+        android:orientation="horizontal">
+
+        <EditText
+            android:id="@+id/editHeight"
+            android:layout_width="144dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="2dp"
+            android:autofillHints=""
+            android:ems="10"
+            android:inputType="number|numberDecimal"
+            android:text="@string/cellphone_height" />
+
+        <Button
+            style="@style/Widget.AppCompat.Button.Colored"
+            android:id="@+id/set_height_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="2dp"
+            android:background="#FFC107"
+            android:text="@string/set_height_button" />
+
+        <Button
+            style="@style/Widget.AppCompat.Button.Colored"
+            android:id="@+id/convert_distance_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="2dp"
+            android:background="#FFC107"
+            android:text="@string/measure_units" />
+    </LinearLayout>
 
     <LinearLayout
         android:id="@+id/linearLayout"
         android:layout_width="match_parent"
-        android:layout_height="120dp"
+        android:layout_height="wrap_content"
         android:layout_alignParentStart="true"
         android:layout_alignParentBottom="true"
         android:layout_marginBottom="2dp"
@@ -78,63 +127,5 @@
             app:layout_constraintStart_toStartOf="@+id/distance_data"
             app:layout_constraintTop_toBottomOf="@+id/distance_data" />
     </LinearLayout>
-
-    <TextView
-        android:id="@+id/textView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignBottom="@+id/textureView"
-        android:layout_alignParentEnd="true"
-        android:layout_marginEnd="195dp"
-        android:layout_marginBottom="303dp"
-        android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true"
-        android:background="@drawable/back"
-        android:text="      " />
-
-    <Button
-        android:id="@+id/convert_distance_button"
-        android:layout_width="64dp"
-        android:layout_height="wrap_content"
-        android:layout_alignBottom="@+id/textureView"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentEnd="true"
-        android:layout_marginStart="333dp"
-        android:layout_marginTop="570dp"
-        android:layout_marginEnd="15dp"
-        android:layout_marginBottom="15dp"
-        android:text="Ft/m" />
-
-    <EditText
-        android:id="@+id/editHeight"
-        android:layout_width="144dp"
-        android:layout_height="wrap_content"
-        android:layout_alignBottom="@+id/textureView"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentEnd="true"
-        android:layout_marginStart="20dp"
-        android:layout_marginTop="570dp"
-        android:layout_marginEnd="260dp"
-        android:layout_marginBottom="15dp"
-        android:autofillHints=""
-        android:ems="10"
-        android:inputType="number|numberDecimal"
-        android:text="@string/cellphone_height" />
-
-    <Button
-        android:id="@+id/set_height_button"
-        android:layout_width="64dp"
-        android:layout_height="wrap_content"
-        android:layout_alignBottom="@+id/textureView"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentEnd="true"
-        android:layout_marginStart="176dp"
-        android:layout_marginTop="569dp"
-        android:layout_marginEnd="121dp"
-        android:layout_marginBottom="15dp"
-        android:text="@string/set_height_button" />
 
 </RelativeLayout>
