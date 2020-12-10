@@ -3,7 +3,7 @@ package com.example.myapplication;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
-
+import android.provider.Settings;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -36,6 +36,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.provider.Settings;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -93,6 +94,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private float distance;
     private boolean is_meters = true;
     private String measure_unit = "m";
+
+    
+    public static void setAutoOrientationEnabled(Context context, boolean enabled)
+    {
+        Settings.System.putInt( context.getContentResolver(), Settings.System.ACCELEROMETER_ROTATION, enabled ? 1 : 0);
+    }
+
 
     /***************************************************************************
      *  Camera helper functions
